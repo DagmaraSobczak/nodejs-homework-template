@@ -14,8 +14,10 @@ const contactSchema = Joi.object({
   name: Joi.string().min(3).max(30).required(),
   email: Joi.string().email().required(),
   phone: Joi.string()
-    .pattern(/^\(\d{3}\) \d{3}-\d{4}$/)
-    .message("Phone number must be in the format XXX-XXX-XXXX")
+    .pattern(/^\(\d{3}\) \d{3}-\d{4}$|^\d{3}-\d{3}-\d{4}$/)
+    .message(
+      "Phone number must be in the format (XXX) XXX-XXXX or XXX-XXX-XXXX"
+    )
     .required(),
 });
 
