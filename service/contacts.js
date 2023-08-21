@@ -42,9 +42,9 @@ const updateContact = async (id, body) => {
   }
 };
 
-const updateFavorite = async (id, favorite) => {
-  return Contact.findByIdAndUpdate(
-    id,
+const updateFavoriteStat = async (contactId, favorite) => {
+  return await Contact.findByIdAndUpdate(
+    contactId,
     { favorite },
     {
       new: true,
@@ -58,7 +58,7 @@ const service = {
   createContact,
   removeContact,
   updateContact,
-  updateFavorite,
+  updateFavoriteStat,
 };
 
 module.exports = service;

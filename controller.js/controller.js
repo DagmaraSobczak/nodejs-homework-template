@@ -10,6 +10,7 @@ const contactSchema = Joi.object({
       "Phone number must be in the format (XXX) XXX-XXXX or XXX-XXX-XXXX"
     )
     .required(),
+  favorite: Joi.boolean().required(),
 });
 
 const get = async (_, res, next) => {
@@ -98,6 +99,7 @@ const update = async (req, res) => {
     const { error } = contactSchema.validate(req.body);
 
     if (error) {
+      console.error(error);
       return res.status(400).json({ message: "missing fields" });
     }
 
@@ -119,39 +121,36 @@ const update = async (req, res) => {
   } catch (err) {
     res.status(400).json({
       status: 400,
-      message: err.details[0].message,
+      message: err.message,
     });
   }
 };
+
 const updateFavorite = async (req, res, next) => {
-  const { id } = req.params;
-  const body = Object.hasOwn(req.body, "favorite") ? req.body : null;
+  const { contactId } = req.params;
+  const { favorite } = req.body;
 
   try {
-    if (body) {
-      const contact = await service.updateContact(id, {
-        favorite: body.favorite,
-      });
+    if (favorite !== undefined) {
+      const updatedContact = await service.updateFavoriteStat(
+        contactId,
+        favorite
+      );
 
-      if (!contact) {
+      if (!updatedContact) {
         return res.status(404).json({
           status: 404,
-          statusText: "Not Found",
-          message: `Not found contact by id: ${id}`,
+          message: "Not found",
         });
       }
 
       res.json({
         status: 200,
-        statusText: "OK",
-        data: {
-          contact,
-        },
+        data: updatedContact,
       });
     } else {
       res.status(400).json({
         status: 400,
-        statusText: "Bad Request",
         message: "Missing field 'favorite'",
       });
     }
