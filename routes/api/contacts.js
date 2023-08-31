@@ -3,7 +3,7 @@ const router = express.Router();
 const ctrlContacts = require("../../controller.js/controller");
 const auth = require("../../middelware/auth");
 
-router.get("/", ctrlContacts.get);
+router.get("/", auth, ctrlContacts.get);
 
 router.get("/:contactId", auth, ctrlContacts.getById);
 
