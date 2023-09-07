@@ -1,6 +1,12 @@
 const User = require("../models/usersSchema");
 const jwt = require("jsonwebtoken");
 const service = require("../service/auth");
+const gravatar = require("gravatar");
+const path = require("node:path");
+
+const fs = require("node:fs").promises;
+const Jimp = require("jimp");
+const configUpload = require("../config/configUpload");
 
 const signin = async (req, res) => {
   const { email, password } = req.body;
@@ -43,7 +49,8 @@ const signup = async (req, res, next) => {
     });
   }
   try {
-    const newUser = new User({ email });
+    const avatar = gravatar.url(email, { s: "200", r: "pg", d: "mm" });
+    const newUser = new User({ email, avatarURL: avatar });
     newUser.setPassword(password);
     await newUser.save();
     return res.status(201).json({
@@ -116,9 +123,24 @@ const logout = async (req, res, next) => {
   }
 };
 
+const updateAvatars = async (req, res) => {
+  const _id = req.user;
+  const { path: tmpUpload, originalname } = req.file;
+  const filename = `${_id}_${originalname}`;
+  const resultUpload = path.join(configUpload.AVATARS_PATH, filename);
+  await fs.rename(tmpUpload, resultUpload);
+  const avatar = await Jimp.read(resultUpload);
+  avatar.resize(250, 250);
+  avatar.write(resultUpload);
+  const avatarURL = path.join("avatars", filename);
+  await User.findByIdAndUpdate(_id, { avatarURL });
+  res.status(200).json({ avatarURL });
+};
+
 module.exports = {
   signin,
   signup,
   current,
   logout,
+  updateAvatars,
 };
