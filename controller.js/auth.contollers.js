@@ -1,12 +1,12 @@
 const User = require("../models/usersSchema");
 const jwt = require("jsonwebtoken");
 const service = require("../service/auth");
+const Jimp = require("jimp");
 const gravatar = require("gravatar");
-const path = require("node:path");
+
+const path = require("path");
 
 const fs = require("node:fs").promises;
-const Jimp = require("jimp");
-const configUpload = require("../config/configUpload");
 
 const signin = async (req, res) => {
   const { email, password } = req.body;
@@ -39,6 +39,11 @@ const signin = async (req, res) => {
 
 const signup = async (req, res, next) => {
   const { email, password } = req.body;
+  const avatarURL = gravatar.url(req.body.email, {
+    s: "200",
+    r: "pg",
+    d: "404",
+  });
   const user = await User.findOne({ email }).lean();
   if (user) {
     return res.status(409).json({
@@ -49,8 +54,8 @@ const signup = async (req, res, next) => {
     });
   }
   try {
-    const avatar = gravatar.url(email, { s: "200", r: "pg", d: "mm" });
-    const newUser = new User({ email, avatarURL: avatar });
+    const newUser = new User({ email, avatarURL });
+
     newUser.setPassword(password);
     await newUser.save();
     return res.status(201).json({
@@ -58,6 +63,7 @@ const signup = async (req, res, next) => {
       code: 201,
       data: {
         message: "Registration successful",
+        avatarURL,
       },
     });
   } catch (error) {
@@ -123,18 +129,30 @@ const logout = async (req, res, next) => {
   }
 };
 
-const updateAvatars = async (req, res) => {
-  const _id = req.user;
-  const { path: tmpUpload, originalname } = req.file;
-  const filename = `${_id}_${originalname}`;
-  const resultUpload = path.join(configUpload.AVATARS_PATH, filename);
-  await fs.rename(tmpUpload, resultUpload);
-  const avatar = await Jimp.read(resultUpload);
-  avatar.resize(250, 250);
-  avatar.write(resultUpload);
-  const avatarURL = path.join("avatars", filename);
-  await User.findByIdAndUpdate(_id, { avatarURL });
-  res.status(200).json({ avatarURL });
+const updateAvatar = async (req, res, next) => {
+  try {
+    const uploadedFile = req.file;
+
+    const avatar = await Jimp.read(uploadedFile.path);
+    await avatar.cover(250, 250).write(uploadedFile.path);
+
+    const newFileName = `avatar_${req.user._id}.${
+      uploadedFile.mimetype.split("/")[1]
+    }`;
+
+    const newPath = path.join(__dirname, `../public/avatars/${newFileName}`);
+
+    await fs.rename(uploadedFile.path, newPath);
+
+    const avatarURL = `/avatars/${newFileName}`;
+    res.status(200).json({
+      status: "success",
+      code: 200,
+      avatarURL,
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 module.exports = {
@@ -142,5 +160,5 @@ module.exports = {
   signup,
   current,
   logout,
-  updateAvatars,
+  updateAvatar,
 };

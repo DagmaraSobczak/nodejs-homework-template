@@ -1,5 +1,5 @@
 const express = require("express");
-
+const auth = require("../../middelware/auth");
 const router = express.Router();
 const authController = require("../../controller.js/auth.contollers");
 const upload = require("../../middelware/upload");
@@ -10,9 +10,9 @@ router.get("/current", authController.current);
 router.get("/logout", authController.logout);
 router.patch(
   "/avatars",
-
+  auth,
   upload.single("avatar"),
-  authController.updateAvatars
+  authController.updateAvatar
 );
 
 module.exports = router;

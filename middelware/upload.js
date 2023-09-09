@@ -1,17 +1,17 @@
 const multer = require("multer");
-const config = require("../config/configUpload");
+const path = require("path");
+
+const updatePath = path.join(process.cwd(), "tmp");
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, config.TMP_DIR);
+  destination: (_, __, callback) => {
+    callback(null, updatePath);
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + "-" + file.originalname);
   },
 });
+const upload = multer({ storage: storage });
 
-const upload = multer({
-  storage,
-});
 module.exports = upload;
