@@ -31,10 +31,23 @@ const signup = async (body) => {
     console.error(err.message);
   }
 };
+const updateAvatarUrl = async (id, avatarURL) => {
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      { _id: id },
+      { avatarURL },
+      { new: true }
+    );
+    return updatedUser;
+  } catch (error) {
+    console.error(error);
+  }
+};
 
 module.exports = {
   signin,
   signout,
   signup,
   getCurrent,
+  updateAvatarUrl,
 };
