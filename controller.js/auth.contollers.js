@@ -3,9 +3,9 @@ const jwt = require("jsonwebtoken");
 const service = require("../service/auth");
 const Jimp = require("jimp");
 const gravatar = require("gravatar");
-
+const uuid = require("uuid");
 const path = require("path");
-
+const emailService = require("../service/email");
 const fs = require("node:fs").promises;
 
 const signin = async (req, res) => {
@@ -36,7 +36,7 @@ const signin = async (req, res) => {
     },
   });
 };
-
+require("dotenv").config();
 const signup = async (req, res, next) => {
   const { email, password } = req.body;
   const avatarURL = gravatar.url(req.body.email, {
@@ -54,16 +54,28 @@ const signup = async (req, res, next) => {
     });
   }
   try {
-    const newUser = new User({ email, avatarURL });
+    const verificationToken = uuid.v4();
+    const newUser = new User({ email, avatarURL, verificationToken });
 
     newUser.setPassword(password);
+
     await newUser.save();
+
+    const emailOptions = {
+      to: newUser.email,
+      subject: "Weryfikacja konta",
+      text: `Kliknij poniższy link, aby zweryfikować swoje konto: /users/verify/${newUser.verificationToken}`,
+    };
+
+    await emailService.send(emailOptions);
+
     return res.status(201).json({
       status: "success",
       code: 201,
       data: {
         message: "Registration successful",
         avatarURL,
+        verificationToken,
       },
     });
   } catch (error) {
@@ -91,6 +103,7 @@ const current = async (req, res, next) => {
         user: {
           email: user.email,
           subscription: user.subscription,
+          token: user.verificationToken,
         },
       },
     });
@@ -155,10 +168,92 @@ const updateAvatar = async (req, res, next) => {
   }
 };
 
+// W kontrolerze do weryfikacji
+const verifyUser = async (req, res, next) => {
+  try {
+    const { verificationToken } = req.params;
+
+    if (!verificationToken) {
+      return res.status(400).json({
+        status: "fail",
+        code: 400,
+        message: "Missing verification token",
+      });
+    }
+
+    const user = await service.verifyUser(verificationToken);
+
+    if (!user) {
+      return res.status(404).json({
+        status: "fail",
+        code: 404,
+        message: "User not found",
+      });
+    }
+
+    // Teraz możesz użyć funkcji send, aby wysłać e-mail z właściwą treścią
+    const emailOptions = {
+      to: user.email,
+      subject: "Weryfikacja konta",
+      text: `Kliknij poniższy link, aby zweryfikować swoje konto: /users/verify/${user.verificationToken}`,
+    };
+
+    await emailService.send(emailOptions);
+
+    return res.status(200).json({
+      status: "success",
+      code: 200,
+      message: "Verification successful",
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const resendVerificationEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Missing required field email" });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (user.verify) {
+      return res
+        .status(400)
+        .json({ message: "Verification has already been passed" });
+    }
+
+    user.verificationToken = uuid.v4();
+    await user.save();
+
+    const emailOptions = {
+      to: user.email,
+      subject: "Weryfikacja konta",
+      text: `Kliknij poniższy link, aby zweryfikować swoje konto: /users/verify/${user.verificationToken}`,
+    };
+
+    await emailService.send(emailOptions);
+
+    return res.status(200).json({ message: "Verification email sent" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
 module.exports = {
   signin,
   signup,
   current,
   logout,
   updateAvatar,
+  verifyUser,
+  resendVerificationEmail,
 };

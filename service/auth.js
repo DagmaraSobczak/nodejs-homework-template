@@ -44,10 +44,29 @@ const updateAvatarUrl = async (id, avatarURL) => {
   }
 };
 
+const verifyUser = async (verificationToken) => {
+  try {
+    const user = await User.findOne({ verificationToken });
+
+    if (!user) {
+      return null;
+    }
+
+    user.verify = true;
+
+    await user.save();
+
+    return user;
+  } catch (error) {
+    console.error(error);
+  }
+};
+
 module.exports = {
   signin,
   signout,
   signup,
   getCurrent,
   updateAvatarUrl,
+  verifyUser,
 };

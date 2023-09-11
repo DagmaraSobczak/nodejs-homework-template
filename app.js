@@ -6,6 +6,7 @@ require("dotenv").config();
 
 const contactsRouter = require("./routes/api/contacts");
 const authRouter = require("./routes/api/auth");
+const emailRouter = require("./routes/api/email");
 
 const app = express();
 
@@ -16,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 require("./config/config");
 app.use("/api/contacts", contactsRouter);
-app.use("/api/auth", authRouter);
+app.use("/api/auth", authRouter, emailRouter);
 app.use(express.static("public/avatars"));
 
 app.use((req, res) => {
