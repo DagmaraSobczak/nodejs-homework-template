@@ -168,7 +168,7 @@ const updateAvatar = async (req, res, next) => {
   }
 };
 
-// W kontrolerze do weryfikacji
+
 const verifyUser = async (req, res, next) => {
   try {
     const { verificationToken } = req.params;
@@ -191,7 +191,7 @@ const verifyUser = async (req, res, next) => {
       });
     }
 
-    // Teraz możesz użyć funkcji send, aby wysłać e-mail z właściwą treścią
+
     const emailOptions = {
       to: user.email,
       subject: "Weryfikacja konta",
