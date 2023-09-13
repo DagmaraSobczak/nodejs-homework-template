@@ -21,6 +21,15 @@ const signin = async (req, res) => {
     });
   }
 
+  if (!user.verify) {
+    return res.status(401).json({
+      status: "error",
+      code: 401,
+      message:
+        "Account is not verified. Please verify your account before logging in.",
+      data: "Unauthorized",
+    });
+  }
   const payload = {
     id: user.id,
     username: user.username,
@@ -168,7 +177,6 @@ const updateAvatar = async (req, res, next) => {
   }
 };
 
-
 const verifyUser = async (req, res, next) => {
   try {
     const { verificationToken } = req.params;
@@ -191,11 +199,10 @@ const verifyUser = async (req, res, next) => {
       });
     }
 
-
     const emailOptions = {
       to: user.email,
       subject: "Weryfikacja konta",
-      text: `Kliknij poniższy link, aby zweryfikować swoje konto: /users/verify/${user.verificationToken}`,
+      html: `Kliknij <a href="/users/verify/${user.verificationToken}">tutaj</a>, aby zweryfikować swoje konto.`,
     };
 
     await emailService.send(emailOptions);
@@ -236,7 +243,7 @@ const resendVerificationEmail = async (req, res) => {
     const emailOptions = {
       to: user.email,
       subject: "Weryfikacja konta",
-      text: `Kliknij poniższy link, aby zweryfikować swoje konto: /users/verify/${user.verificationToken}`,
+      html: `Kliknij <a href="/users/verify/${user.verificationToken}">tutaj</a>, aby zweryfikować swoje konto.`,
     };
 
     await emailService.send(emailOptions);
