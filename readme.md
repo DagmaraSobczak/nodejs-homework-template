@@ -1,3 +1,8 @@
+hw02 - REST API for working with a contact list
+hw03 - Working with a MongoDB database
+hw04 - User authentication/authorization logic using JWT (JSON Web Tokens)
+hw05 - Option to upload user avatars using Multer
+hw06 - Email verification for user registration using the SendGrid service
 ## GoIT Node.js Course Template Homework
 
 Виконайте форк цього репозиторію для виконання домашніх завдань (2-6)
